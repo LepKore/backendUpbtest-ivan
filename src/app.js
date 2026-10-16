@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const pool = require('./config/db');
 const productoRoutes = require('./routes/producto.routes');
 
 const app = express();
@@ -14,6 +15,16 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'backendUpb' });
+});
+
+app.get('/health/db', async (req, res) => {
+    try {
+        await pool.query('SELECT 1');
+        res.json({ status: 'ok', database: 'connected' });
+    } catch (error) {
+        console.error('Database health check failed:', error.message);
+        res.status(503).json({ status: 'error', database: 'unavailable' });
+    }
 });
 
 app.use('/api/productos', productoRoutes);
