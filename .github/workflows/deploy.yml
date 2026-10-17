@@ -23,6 +23,9 @@ jobs:
       - name: Verificar sintaxis
         run: find src -name "*.js" -exec node --check {} \;
 
+      - name: Ejecutar tests
+        run: npm test
+
       - name: Validar configuración de Render
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}

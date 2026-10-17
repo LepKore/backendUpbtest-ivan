@@ -1,0 +1,4 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "plugins": ["./hooks/verificar-tests-antes-de-push.ts"]
+}

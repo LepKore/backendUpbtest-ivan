@@ -46,8 +46,8 @@ const actualizarProductoDto = (body) => validarCampos(body, { parcial: true });
 const productoResponseDto = (producto) => ({
     id: producto.id,
     nombre: producto.nombre,
-    precio: producto.precio,
-    stock: producto.stock,
+    precio: Number(producto.precio),
+    stock: Number(producto.stock),
     createdAt: producto.createdAt,
 });
 

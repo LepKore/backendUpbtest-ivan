@@ -1,0 +1,458 @@
+{
+	"info": {
+		"_postman_id": "b7f3c1a2-5d64-4e18-9c07-2f4a6b8d1e93",
+		"name": "Ratatouille API",
+		"description": "API del backend de pedidos anticipados (Express + PostgreSQL).\n\n## Cómo usarla\n1. Importa esta colección en Postman (Import > Link / File).\n2. La variable de colección `baseUrl` apunta por defecto a `http://localhost:3000`. Cámbiala en el nivel de colección (o en la pestaña Collection > Variables) si el backend está desplegado en Render.\n3. Ejecuta primero **Auth > Login** con las credenciales del `.env` (`ADMIN_USER` / `ADMIN_PASSWORD`). El test de esa petición guarda el token en la variable de colección `token`.\n4. Las peticiones que escriben datos (crear/editar/borrar productos, cancelar pedidos, resetear la base de datos) ya usan `{{token}}`.\n\nNo hay environment: todas las variables viven en la propia colección.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Salud",
+			"description": "Comprobación de que el servidor y la base de datos responden.",
+			"item": [
+				{
+					"name": "Ping raíz",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": ["{{baseUrl}}"],
+							"path": [""]
+						},
+						"description": "Devuelve el texto 'API backendUpb funcionando'."
+					},
+					"response": []
+				},
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Estado del servicio: `{ \"status\": \"ok\", \"service\": \"backendUpb\" }`."
+					},
+					"response": []
+				},
+				{
+					"name": "Health de la base de datos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health/db",
+							"host": ["{{baseUrl}}"],
+							"path": ["health", "db"]
+						},
+						"description": "Comprueba la conexión con PostgreSQL. Responde 503 si la base de datos no está disponible."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"description": "Autenticación del administrador. El token dura 8 horas.",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const json = pm.response.json();",
+									"pm.test('Login devuelve un token', function () {",
+									"    pm.expect(json.token).to.be.a('string');",
+									"});",
+									"if (json.token) {",
+									"    pm.collectionVariables.set('token', json.token);",
+									"    console.log('Token guardado en la variable de colección \"token\"');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"admin\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Cuerpo: `{ \"usuario\": \"...\", \"password\": \"...\" }`. Responde `{ \"token\": \"...\" }` y guarda el token en la variable de colección."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Productos",
+			"description": "CRUD del catálogo. Los GET son públicos; las escrituras exigen `Authorization: Bearer {{token}}`.",
+			"item": [
+				{
+					"name": "Listar productos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const json = pm.response.json();",
+									"pm.test('Devuelve un array', function () {",
+									"    pm.expect(json).to.be.an('array');",
+									"});",
+									"if (json.length > 0) {",
+									"    pm.collectionVariables.set('productoId', json[0].id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/productos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "productos"]
+						},
+						"description": "Catálogo completo. El test guarda el primer `id` en la variable de colección `productoId`."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener producto",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/productos/{{productoId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "productos", "{{productoId}}"]
+						},
+						"description": "Devuelve 404 si el producto no existe."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear producto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const json = pm.response.json();",
+									"pm.test('Se crea con 201', function () {",
+									"    pm.expect(pm.response.code).to.eql(201);",
+									"});",
+									"if (json.id) {",
+									"    pm.collectionVariables.set('productoId', json.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Sopa de cebolla a la francesa\",\n  \"precio\": 9.5,\n  \"stock\": 30\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/productos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "productos"]
+						},
+						"description": "`nombre` obligatorio (máx. 100), `precio` número ≥ 0, `stock` entero ≥ 0. Responde 401 sin token y 400 con el cuerpo inválido."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar producto",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"precio\": 11.25,\n  \"stock\": 12\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/productos/{{productoId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "productos", "{{productoId}}"]
+						},
+						"description": "Actualización parcial: se envía solo lo que cambia. Un producto que aparece en pedidos puede editarse siempre; borrarlo deja `producto_id` en NULL y el historial conserva nombre y precio."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar producto",
+					"request": {
+						"method": "DELETE",
+						"header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+						"url": {
+							"raw": "{{baseUrl}}/api/productos/{{productoId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "productos", "{{productoId}}"]
+						},
+						"description": "Responde 204 al borrar y 404 si no existe."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pedidos",
+			"description": "Pedidos anticipados. Crear un pedido descuenta el stock del catálogo; cancelar lo repone.",
+			"item": [
+				{
+					"name": "Listar pedidos (historial)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const json = pm.response.json();",
+									"pm.test('Devuelve un array', function () {",
+									"    pm.expect(json).to.be.an('array');",
+									"});",
+									"if (json.length > 0) {",
+									"    pm.collectionVariables.set('pedidoId', json[0].id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/pedidos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "pedidos"]
+						},
+						"description": "Historial completo, del más reciente al más antiguo. El test guarda el `id` del primero en la variable de colección `pedidoId`."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener pedido",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "pedidos", "{{pedidoId}}"]
+						},
+						"description": "Detalle con sus líneas. Responde 404 si no existe."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear pedido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Se crea con 201', function () {",
+									"    pm.expect(pm.response.code).to.eql(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.id) {",
+									"    pm.collectionVariables.set('pedidoId', json.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cliente\": \"Marta Ejemplo\",\n  \"telefono\": \"600 123 456\",\n  \"notas\": \"Sin cebolla, por favor\",\n  \"items\": [\n    { \"productoId\": 1, \"cantidad\": 2 },\n    { \"productoId\": 2, \"cantidad\": 1 }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/pedidos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "pedidos"]
+						},
+						"description": "`cliente` obligatorio (máx. 100), `telefono` y `notas` opcionales, `items` no vacío con `productoId` y `cantidad` enteros > 0. Los nombres y precios se toman siempre del producto guardado en la base de datos. Errores: 400 cuerpo inválido, 404 producto inexistente, 409 sin stock suficiente (en ese caso no se descuenta nada)."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar pedido",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+						"body": { "mode": "raw", "raw": "" },
+						"url": {
+							"raw": "{{baseUrl}}/api/pedidos/{{pedidoId}}/cancelar",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "pedidos", "{{pedidoId}}", "cancelar"]
+						},
+						"description": "Marca el pedido como `cancelado` y devuelve el stock al catálogo. 401 sin token, 404 si no existe o ya estaba cancelado."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Administración",
+			"description": "Operaciones de mantenimiento. Requieren credenciales de administrador.",
+			"item": [
+				{
+					"name": "Resetear la base de datos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Se reinicia con 200', function () {",
+									"    pm.expect(pm.response.code).to.eql(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+						"body": { "mode": "raw", "raw": "" },
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/reset",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "admin", "reset"]
+						},
+						"description": "IRREVERSIBLE. Borra productos, pedidos y líneas, reinicia los contadores de id y vuelve a sembrar la carta (Ratatouille, Sopa de cebolla a la francesa, Pollo al vino tinto) con un pedido de ejemplo. Comprueba que `baseUrl` apunta al entorno correcto antes de ejecutarlo: afecta a la base de datos a la que se conecte el servidor."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Errores",
+			"description": "Peticiones para comprobar las respuestas de error.",
+			"item": [
+				{
+					"name": "Ruta inexistente (404)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/no-existe",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "no-existe"]
+						},
+						"description": "Responde 404 con `{ \"error\": \"Ruta no encontrada\" }`."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear producto sin token (401)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Prueba sin token\",\n  \"precio\": 1,\n  \"stock\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/productos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "productos"]
+						},
+						"description": "Responde 401 `{ \"error\": \"Autenticación requerida\" }`."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear producto con cuerpo inválido (400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"\",\n  \"precio\": -3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/productos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "productos"]
+						},
+						"description": "Responde 400 con el motivo del fallo de validación."
+					},
+					"response": []
+				},
+				{
+					"name": "Pedido sin stock (409)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cliente\": \"Prueba sin stock\",\n  \"items\": [\n    { \"productoId\": 1, \"cantidad\": 9999 }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/pedidos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "pedidos"]
+						},
+						"description": "Responde 409 `No hay stock suficiente de \"...\"`. La transacción hace ROLLBACK: no se descuenta nada ni se crea el pedido."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "productoId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "pedidoId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
