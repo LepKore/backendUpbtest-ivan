@@ -8,7 +8,7 @@ Audiencia / uso: proyecto académico.
 
 ## 2. Stack tecnológico y arquitectura
 Backend: Node.js, Express 5 y PostgreSQL mediante `pg`.
-Tests: runner nativo `node:test` con `supertest` para las rutas (74 casos).
+Tests: runner nativo `node:test` con `supertest` para las rutas (85 casos). Cada test arranca con `require('./helpers/entorno')`, que fija `ADMIN_USER`, `ADMIN_PASSWORD`, `AUTH_SECRET` y `DATABASE_URL` de prueba: los tests no deben depender del `.env` del desarrollador ni de variables reales.
 Patrones clave: rutas, middleware de autenticación, controladores, servicio, repositorio, DTO y entidad.
 
 ## 3. Estructura del proyecto
@@ -37,6 +37,7 @@ Variables requeridas: `PORT`, `DATABASE_URL`, `DB_SSL`, `ADMIN_USER`, `ADMIN_PAS
 `DB_PORT` no es necesario porque `DATABASE_URL` ya contiene el puerto.
 Comparar firmas con hashes de longitud fija: comparar cadenas crudas puede lanzar `RangeError`.
 Los tests sustituyen `pool` y el repositorio en `require.cache`; no deben tocar la base real.
+Todo test que cargue `src/app.js` o `src/middleware/auth.js` debe requerir antes `tests/helpers/entorno.js`, porque esas Throw al faltar variables y en CI no existe `.env`.
 Crear un pedido descuenta stock en una transacción: si un producto no tiene stock, se hace `ROLLBACK` y se responde 409.
 Los totales se redondean a céntimos para evitar errores de coma flotante.
 Las credenciales académicas están documentadas en README; cambiar en entornos reales.

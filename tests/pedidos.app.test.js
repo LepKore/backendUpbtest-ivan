@@ -2,9 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 
-process.env.ADMIN_USER = 'admin';
-process.env.ADMIN_PASSWORD = 'admin123';
-process.env.AUTH_SECRET = 'secreto-de-test';
+require('./helpers/entorno');
 
 // Almacenes en memoria: simulan productos y pedidos sin tocar la base de datos
 let almacenProductos = [{ id: 1, nombre: 'Paella', precio: 10, stock: 5 }];

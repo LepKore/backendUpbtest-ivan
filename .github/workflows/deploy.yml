@@ -25,6 +25,12 @@ jobs:
 
       - name: Ejecutar tests
         run: npm test
+        env:
+          # Valores de prueba: los tests fijan su propio entorno, esto es solo una red de seguridad
+          ADMIN_USER: admin
+          ADMIN_PASSWORD: admin123
+          AUTH_SECRET: secreto-de-ci
+          DATABASE_URL: postgres://test:test@localhost:5432/test
 
       - name: Validar configuración de Render
         env:

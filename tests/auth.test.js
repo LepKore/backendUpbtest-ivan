@@ -1,9 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-process.env.ADMIN_USER = 'admin';
-process.env.ADMIN_PASSWORD = 'admin123';
-process.env.AUTH_SECRET = 'secreto-de-test';
+require('./helpers/entorno');
 
 const { autenticar, login } = require('../src/middleware/auth');
 
