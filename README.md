@@ -8,7 +8,14 @@ Configura `DATABASE_URL`, `DB_SSL`, `ADMIN_USER`, `ADMIN_PASSWORD` y `AUTH_SECRE
 
 Las tres últimas son **obligatorias**: si falta alguna, el servidor no arranca y muestra cuál falta. No hay valores por defecto en el código, precisamente para que un despliegue sin configurar no quede con un administrador abierto.
 
-Credenciales de administración para este proyecto académico: **`admin` / `admin123`**. Se dejan a propósito para que cualquiera pueda probar la pantalla de administración; cámbialas en cualquier entorno real.
+### Credenciales de acceso
+
+> **Usuario**: `admin`
+> **Contraseña**: `admin123`
+
+Estas serán las credenciales de acceso, salvo que el dueño del proyecto las haya cambiado. **Si no puedes entrar con ellas, pregunta al dueño**: significa que las variables `ADMIN_USER` / `ADMIN_PASSWORD` del despliegue tienen otros valores.
+
+Se dejan publicadas a propósito para que cualquiera pueda probar la pantalla de administración de este proyecto académico; en cualquier entorno real deben cambiarse.
 
 Genera un `AUTH_SECRET` con:
 
